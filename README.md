@@ -1,10 +1,18 @@
-# gamegrid
+# Game Grid
 
-This template should help get you started developing with Vue 3 in Vite.
+Game Grid is a daily puzzle game where players guess video games based on screenshots and covers. Built with Vue 3, Vite, TypeScript, and a Node.js/Express backend that fetches data from IGDB.
+
+## Features
+
+- Daily 3x3 grid of games to guess
+- Guess by searching game titles
+- Limited number of incorrect guesses (lives system)
+- Reveal answers and share your results
+- Responsive, modern UI
 
 ## Recommended IDE Setup
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (disable Vetur)
 
 ## Type Support for `.vue` Imports in TS
 
@@ -17,6 +25,7 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 ## Project Setup
 
 ```sh
+cd .\src\
 npm install
 ```
 
@@ -59,3 +68,26 @@ npm run test:e2e
 ```sh
 npm run lint
 ```
+
+## Backend Setup
+
+The backend is in `/api-service` and uses Express and Axios to fetch data from IGDB.
+
+1. Copy `.env.example` to `.env` and fill in your Twitch/IGDB credentials.
+2. Install dependencies:
+   ```sh
+   cd api-service
+   npm install
+   ```
+3. Start the server:
+   ```sh
+   npx ts-node server.ts
+   ```
+
+## Contributing
+
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+
+## License
+
+[MIT](LICENSE)
