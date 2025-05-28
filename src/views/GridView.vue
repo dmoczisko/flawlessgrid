@@ -1,13 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-
-interface Game {
-  id: number;
-  name: string;
-  cover?: { url: string };
-  screenshots?: { url: string }[];
-  first_release_date?: number;
-}
+import type { Game } from "../types/Game";
 
 const games = ref<Game[]>([]);
 const gridId = ref<string | null>(null);
@@ -83,7 +76,7 @@ function makeGuess(game: Game) {
   console.log("Guessing:", game.id, "Expected:", selectedGame.value?.id);
   if (selectedGame.value && game.id === selectedGame.value.id) {
     guessResult.value = "Correct!";
-    flippedCells.value.add(game.id);
+    flippedCells.value.add(game.id!);
     setTimeout(() => {
       closeModal();
     }, 1000);
@@ -136,10 +129,10 @@ const gridNumber = computed(() => (gridId.value ? getGridNumber(gridId.value) : 
         :key="game.id || idx"
         class="grid-cell"
         :class="{
-          flipped: flippedCells.has(game.id) || answersRevealed,
-          'not-guessed': answersRevealed && !flippedCells.has(game.id),
+          flipped: flippedCells.has(game.id!) || answersRevealed,
+          'not-guessed': answersRevealed && !flippedCells.has(game.id!),
         }"
-        @click="!flippedCells.has(game.id) && !answersRevealed && openModal(game)"
+        @click="!flippedCells.has(game.id!) && !answersRevealed && openModal(game)"
       >
         <div class="card-inner">
           <div class="card-front">

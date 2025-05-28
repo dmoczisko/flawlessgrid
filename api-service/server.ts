@@ -1,3 +1,4 @@
+import { Game } from '../src/types/Game'
 import dotenv from 'dotenv'
 import express, { Request, Response } from 'express'
 import axios from 'axios'
@@ -11,7 +12,7 @@ app.use(cors())
 let accessToken = ''
 let tokenExpiry = 0
 
-let cachedGrid: { date: string; games: any[] } = { date: '', games: [] }
+let cachedGrid: { date: string; games: Game[] } = { date: '', games: [] }
 
 // Get Twitch access token
 async function getAccessToken(): Promise<string> {
@@ -67,9 +68,15 @@ app.get('/api/games', (req: Request, res: Response) => {
       }
       cachedGrid = { date: today, games: selectedGames }
       res.json({ games: selectedGames, gridId: today })
-    } catch (err: any) {
-      console.error('IGDB error:', err.response?.data || err.message)
-      res.status(500).json({ error: err.message, details: err.response?.data })
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        console.error('IGDB error:', err.response?.data || err.message)
+        res.status(500).json({ error: err.message, details: err.response?.data })
+      } else if (err instanceof Error) {
+        res.status(500).json({ error: err.message })
+      } else {
+        res.status(500).json({ error: 'Unknown error' })
+      }
     }
   })()
 })
@@ -93,9 +100,15 @@ app.get('/api/search', (req: Request, res: Response) => {
         },
       )
       res.json(igdbRes.data)
-    } catch (err: any) {
-      console.error('IGDB search error:', err.response?.data || err.message)
-      res.status(500).json({ error: err.message, details: err.response?.data })
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        console.error('IGDB search error:', err.response?.data || err.message)
+        res.status(500).json({ error: err.message, details: err.response?.data })
+      } else if (err instanceof Error) {
+        res.status(500).json({ error: err.message })
+      } else {
+        res.status(500).json({ error: 'Unknown error' })
+      }
     }
   })()
 })
