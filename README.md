@@ -10,6 +10,14 @@ Game Grid is a daily puzzle game where players guess video games based on screen
 - Reveal answers and share your results
 - Responsive, modern UI
 
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) (version 18.x or newer recommended)
+- [npm](https://www.npmjs.com/) (comes with Node.js)
+- [Git](https://git-scm.com/) (for cloning the repository)
+- [Twitch Developer Account](https://dev.twitch.tv/console) for IGDB API credentials
+  - You need a Twitch Developer account to get a `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET` for the backend.
+
 ## Recommended IDE Setup
 
 - [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (disable Vetur)
