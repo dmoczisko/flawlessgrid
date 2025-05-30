@@ -71,10 +71,19 @@ app.get('/api/games', (req: Request, res: Response) => {
       const monthTimestamp = Math.floor(firstOfMonth.getTime() / 1000)
 
       const token = await getAccessToken()
-      // Fetch 50 games released before the current month
+      // Fetch 50 games released before the current month, with quality filters
       const igdbRes = await axios.post(
         'https://api.igdb.com/v4/games',
-        `fields name, cover.url, screenshots.url, first_release_date; where screenshots != null & first_release_date != null & first_release_date < ${monthTimestamp}; limit 50;`,
+        `fields name, id, cover.url, screenshots.url, first_release_date, popularity, rating, total_rating_count, summary; \
+         where screenshots != null \
+           & cover != null \
+           & first_release_date != null \
+           & first_release_date < ${monthTimestamp} \
+           & popularity > 10 \
+           & rating > 60 \
+           & total_rating_count > 10 \
+           & summary != null; \
+         limit 50;`,
         {
           headers: {
             'Client-ID': process.env.TWITCH_CLIENT_ID as string,
@@ -82,9 +91,18 @@ app.get('/api/games', (req: Request, res: Response) => {
           },
         },
       )
-      // Randomly select 9 games
+      // Remove duplicate game names, keep first occurrence
       const allGames = igdbRes.data
-      const selectedGames = selectGamesForDate(allGames, today)
+      const uniqueGames: Game[] = []
+      const seenNames = new Set<string>()
+      for (const game of allGames) {
+        if (!seenNames.has(game.name)) {
+          uniqueGames.push(game)
+          seenNames.add(game.name)
+        }
+      }
+      // Randomly select 9 games
+      const selectedGames = selectGamesForDate(uniqueGames, today)
       cachedGrid = { date: today, games: selectedGames }
       res.json({ games: selectedGames, gridId: today })
     } catch (err: unknown) {
