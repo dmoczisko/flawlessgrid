@@ -1,11 +1,37 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from "vue";
+import { ref, onMounted, computed, nextTick, watch } from "vue";
 import type { Game } from "../types/Game";
 
 const games = ref<Game[]>([]);
 const gridId = ref<string | null>(null);
 const isLoading = ref(true);
 const searchInput = ref<HTMLInputElement | null>(null); // Add ref for input
+
+const showModal = ref(false);
+const selectedGame = ref<Game | null>(null);
+const searchQuery = ref("");
+const searchResults = ref<Game[]>([]);
+const guessResult = ref<string | null>(null);
+const flippedCells = ref<Set<number>>(new Set());
+const buttonText = ref("Give Up & Reveal Answers");
+const incorrectGuesses = ref(0);
+const answersRevealed = ref(false);
+const completionModal = ref(false);
+const completionType = ref<"win" | "giveup" | "fail" | null>(null);
+
+function saveProgress() {
+  if (!gridId.value) return;
+  localStorage.setItem(
+    `gamegrid-progress-${gridId.value}`,
+    JSON.stringify({
+      flippedCells: Array.from(flippedCells.value),
+      incorrectGuesses: incorrectGuesses.value,
+      answersRevealed: answersRevealed.value,
+      buttonText: buttonText.value,
+      completionModal: completionModal.value,
+    })
+  );
+}
 
 onMounted(async () => {
   isLoading.value = true;
@@ -14,7 +40,44 @@ onMounted(async () => {
   games.value = data.games;
   gridId.value = data.gridId;
   isLoading.value = false;
+
+  // Restore progress from localStorage if available
+  if (gridId.value) {
+    const saved = localStorage.getItem(`gamegrid-progress-${gridId.value}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object") {
+          flippedCells.value = new Set(parsed.flippedCells || []);
+          incorrectGuesses.value = parsed.incorrectGuesses || 0;
+          answersRevealed.value = !!parsed.answersRevealed;
+          buttonText.value = parsed.buttonText || "Give Up & Reveal Answers";
+          if (parsed.completionModal) completionModal.value = true;
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+  }
 });
+
+watch(
+  [flippedCells, incorrectGuesses, answersRevealed, buttonText, completionModal, gridId],
+  () => {
+    // Change button text to "Summary" if the game is completed (win, fail, or giveup)
+    if (
+      flippedCells.value.size === 9 ||
+      incorrectGuesses.value >= 5 ||
+      answersRevealed.value
+    ) {
+      buttonText.value = "Summary";
+    } else {
+      buttonText.value = "Give Up & Reveal Answers";
+    }
+    saveProgress();
+  },
+  { deep: true }
+);
 
 function getScreenshotUrl(game: Game) {
   return game.screenshots && game.screenshots.length > 0
@@ -38,18 +101,6 @@ function getReleaseYear(game: Game) {
     ? new Date(game.first_release_date * 1000).getFullYear()
     : "N/A";
 }
-
-const showModal = ref(false);
-const selectedGame = ref<Game | null>(null);
-const searchQuery = ref("");
-const searchResults = ref<Game[]>([]);
-const guessResult = ref<string | null>(null);
-const flippedCells = ref<Set<number>>(new Set());
-const buttonText = ref("Give Up & Reveal Answers");
-const incorrectGuesses = ref(0);
-const answersRevealed = ref(false);
-const completionModal = ref(false);
-const completionType = ref<"win" | "giveup" | "fail" | null>(null);
 
 function openModal(game: Game) {
   selectedGame.value = game;
@@ -103,6 +154,7 @@ function makeGuess(game: Game) {
     setTimeout(() => {
       closeModal();
       checkCompletion();
+      saveProgress();
     }, 1000);
   } else {
     guessResult.value = "Incorrect!";
@@ -110,6 +162,7 @@ function makeGuess(game: Game) {
     if (incorrectGuesses.value >= 5) {
       revealAll();
       checkCompletion();
+      saveProgress();
     }
   }
 }
@@ -129,6 +182,7 @@ const revealAll = () => {
   closeModal();
   answersRevealed.value = true;
   checkCompletion();
+  saveProgress();
 };
 
 // Helper to generate a sequential grid number based on the date
@@ -169,6 +223,7 @@ function shareResult() {
   setTimeout(() => {
     showCopyToast.value = false;
   }, 2000);
+  saveProgress();
 }
 
 // Helper function for the mini grid in the completion modal
