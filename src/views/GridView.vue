@@ -75,7 +75,6 @@ async function searchGames() {
 }
 
 function makeGuess(game: Game) {
-  console.log("Guessing:", game.id, "Expected:", selectedGame.value?.id);
   if (selectedGame.value && game.id === selectedGame.value.id) {
     guessResult.value = "Correct!";
     flippedCells.value.add(game.id!);

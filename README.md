@@ -89,7 +89,8 @@ The backend is in `/api-service` and uses Express and Axios to fetch data from I
    ```
 3. Start the server:
    ```sh
-   npx ts-node server.ts
+   cd api-service
+   npm start
    ```
 
 ## Contributing
