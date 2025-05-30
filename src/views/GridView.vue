@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, nextTick } from "vue";
 import type { Game } from "../types/Game";
 
 const games = ref<Game[]>([]);
 const gridId = ref<string | null>(null);
+const isLoading = ref(true);
+const searchInput = ref<HTMLInputElement | null>(null); // Add ref for input
 
 onMounted(async () => {
+  isLoading.value = true;
   const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/games`);
   const data = await res.json();
   games.value = data.games;
   gridId.value = data.gridId;
+  isLoading.value = false;
 });
 
 function getScreenshotUrl(game: Game) {
@@ -44,6 +48,8 @@ const flippedCells = ref<Set<number>>(new Set());
 const buttonText = ref("Give Up & Reveal Answers");
 const incorrectGuesses = ref(0);
 const answersRevealed = ref(false);
+const completionModal = ref(false);
+const completionType = ref<"win" | "giveup" | "fail" | null>(null);
 
 function openModal(game: Game) {
   selectedGame.value = game;
@@ -51,6 +57,9 @@ function openModal(game: Game) {
   searchQuery.value = "";
   searchResults.value = [];
   guessResult.value = null;
+  nextTick(() => {
+    searchInput.value?.focus();
+  });
 }
 
 function closeModal() {
@@ -74,18 +83,33 @@ async function searchGames() {
   searchResults.value = await res.json();
 }
 
+function checkCompletion() {
+  if (flippedCells.value.size === 9) {
+    completionType.value = "win";
+    completionModal.value = true;
+  } else if (incorrectGuesses.value >= 5) {
+    completionType.value = "fail";
+    completionModal.value = true;
+  } else if (answersRevealed.value) {
+    completionType.value = "giveup";
+    completionModal.value = true;
+  }
+}
+
 function makeGuess(game: Game) {
   if (selectedGame.value && game.id === selectedGame.value.id) {
     guessResult.value = "Correct!";
     flippedCells.value.add(game.id!);
     setTimeout(() => {
       closeModal();
+      checkCompletion();
     }, 1000);
   } else {
     guessResult.value = "Incorrect!";
     incorrectGuesses.value++;
     if (incorrectGuesses.value >= 5) {
       revealAll();
+      checkCompletion();
     }
   }
 }
@@ -101,9 +125,10 @@ function getTitlePlaceholder(game: Game) {
 }
 
 const revealAll = () => {
-  buttonText.value = "Answers Revealed";
+  buttonText.value = "Summary";
   closeModal();
   answersRevealed.value = true;
+  checkCompletion();
 };
 
 // Helper to generate a sequential grid number based on the date
@@ -116,6 +141,46 @@ function getGridNumber(dateStr: string): number {
 }
 
 const gridNumber = computed(() => (gridId.value ? getGridNumber(gridId.value) : null));
+
+const showCopyToast = ref(false);
+
+function shareResult() {
+  // Build a grid of emojis: 🟩 for correct, 🟥 for incorrect, ⬜ for not guessed
+  let grid = "";
+  let idx = 0;
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 3; col++) {
+      const game = games.value[idx];
+      if (flippedCells.value.has(game.id!)) {
+        grid += "🟩";
+      } else if (answersRevealed.value) {
+        grid += "⬜";
+      } else {
+        grid += "🟥";
+      }
+      idx++;
+    }
+    grid += "\n";
+  }
+  const url = window.location.origin;
+  const text = `GameGrid #${gridNumber.value} ${flippedCells.value.size}/9\n${grid}\n${url}`;
+  navigator.clipboard.writeText(text);
+  showCopyToast.value = true;
+  setTimeout(() => {
+    showCopyToast.value = false;
+  }, 2000);
+}
+
+// Helper function for the mini grid in the completion modal
+function getMiniGridClass(idx: number) {
+  const game = games.value[idx];
+  if (!game) return "";
+  if (flippedCells.value.has(game.id!)) {
+    return "mini-green";
+  } else {
+    return "mini-gray";
+  }
+}
 </script>
 
 <template>
@@ -125,45 +190,59 @@ const gridNumber = computed(() => (gridId.value ? getGridNumber(gridId.value) : 
 
   <div class="grid-outer">
     <div class="grid-container">
-      <div
-        v-for="(game, idx) in games"
-        :key="game.id || idx"
-        class="grid-cell"
-        :class="{
-          flipped: flippedCells.has(game.id!) || answersRevealed,
-          'not-guessed': answersRevealed && !flippedCells.has(game.id!),
-        }"
-        @click="!flippedCells.has(game.id!) && !answersRevealed && openModal(game)"
-      >
-        <div class="card-inner">
-          <div class="card-front">
-            <img
-              v-if="getScreenshotUrl(game)"
-              :src="getScreenshotUrl(game)"
-              :alt="' screenshot'"
-              class="game-cover"
-            />
-            <img
-              v-else-if="getCoverUrl(game)"
-              :src="getCoverUrl(game)"
-              :alt="' cover'"
-              class="game-cover"
-            />
-            <div class="year-bar">
-              {{ getTitlePlaceholder(game) }} ({{ getReleaseYear(game) }})
+      <template v-if="isLoading">
+        <div v-for="n in 9" :key="'skeleton-' + n" class="grid-cell skeleton">
+          <div class="card-inner">
+            <div class="card-front">
+              <div class="skeleton-img"></div>
+              <div class="skeleton-bar"></div>
             </div>
           </div>
-          <div class="card-back">
-            <img
-              v-if="getCoverUrl(game)"
-              :src="getCoverUrl(game)"
-              :alt="game.name + ' cover'"
-              class="game-cover"
-            />
-            <div class="year-bar">{{ game.name }}<br />({{ getReleaseYear(game) }})</div>
+        </div>
+      </template>
+      <template v-else>
+        <div
+          v-for="(game, idx) in games"
+          :key="game.id || idx"
+          class="grid-cell"
+          :class="{
+            flipped: flippedCells.has(game.id!) || answersRevealed,
+            'not-guessed': answersRevealed && !flippedCells.has(game.id!),
+          }"
+          @click="!flippedCells.has(game.id!) && !answersRevealed && openModal(game)"
+        >
+          <div class="card-inner">
+            <div class="card-front">
+              <img
+                v-if="getScreenshotUrl(game)"
+                :src="getScreenshotUrl(game)"
+                :alt="' screenshot'"
+                class="game-cover"
+              />
+              <img
+                v-else-if="getCoverUrl(game)"
+                :src="getCoverUrl(game)"
+                :alt="' cover'"
+                class="game-cover"
+              />
+              <div class="year-bar">
+                {{ getTitlePlaceholder(game) }} ({{ getReleaseYear(game) }})
+              </div>
+            </div>
+            <div class="card-back">
+              <img
+                v-if="getCoverUrl(game)"
+                :src="getCoverUrl(game)"
+                :alt="game.name + ' cover'"
+                class="game-cover"
+              />
+              <div class="year-bar">
+                {{ game.name }}<br />({{ getReleaseYear(game) }})
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
     <!-- Modal -->
     <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
@@ -172,6 +251,7 @@ const gridNumber = computed(() => (gridId.value ? getGridNumber(gridId.value) : 
         <div class="guess-counter">Incorrect guesses: {{ incorrectGuesses }} / 5</div>
         <h3>Guess the Game</h3>
         <input
+          ref="searchInput"
           v-model="searchQuery"
           @input="searchGames"
           placeholder="Search for a game title..."
@@ -213,6 +293,53 @@ const gridNumber = computed(() => (gridId.value ? getGridNumber(gridId.value) : 
     </div>
   </div>
   <button class="give-up-btn" @click="revealAll">{{ buttonText }}</button>
+
+  <div v-if="completionModal" class="modal-overlay" @click.self="completionModal = false">
+    <div class="modal completion-modal modern-modal">
+      <button class="close-btn" @click="completionModal = false">&times;</button>
+      <div class="completion-content">
+        <h2 class="completion-title summary-title">Summary</h2>
+        <div class="summary-details">
+          <div class="summary-grid-number">Video Game Grid #{{ gridNumber }}</div>
+        </div>
+        <div class="mini-emoji-grid">
+          <div v-for="row in 3" :key="'mini-row-' + row" class="mini-emoji-row">
+            <span
+              v-for="col in 3"
+              :key="'mini-col-' + col"
+              :class="['mini-emoji-cell', getMiniGridClass((row - 1) * 3 + (col - 1))]"
+            ></span>
+          </div>
+        </div>
+      </div>
+      <div class="summary-score">You got {{ flippedCells.size }} out of 9</div>
+      <div class="share-btn-row bottom-row">
+        <button class="share-btn small" @click="shareResult">
+          <svg
+            class="share-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </svg>
+          Share
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="showCopyToast" class="copy-toast">Result copied to clipboard!</div>
 
   <footer class="igdb-footer">
     <span
@@ -572,5 +699,159 @@ body {
   vertical-align: middle;
   border-radius: 6px;
   padding: 2px;
+}
+
+.skeleton {
+  background: #e0e0e0;
+  border: 2px solid #bbb;
+  animation: pulse 1.2s infinite ease-in-out;
+  cursor: default;
+}
+.skeleton-img {
+  width: 100%;
+  height: 80%;
+  background: #d0d0d0;
+  border-radius: 12px 12px 0 0;
+  margin-bottom: 0.5rem;
+}
+.skeleton-bar {
+  width: 80%;
+  height: 24px;
+  background: #c0c0c0;
+  border-radius: 6px;
+  margin: 0 auto 1rem auto;
+}
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.copy-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  background: #222;
+  color: #fff;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+  z-index: 5000;
+  opacity: 0.97;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.modal.completion-modal.modern-modal {
+  min-width: 520px;
+  min-height: 480px;
+  width: 540px;
+  height: 520px;
+  max-width: 900px;
+  max-height: 98vh;
+}
+@media (max-width: 900px) {
+  .modal.completion-modal.modern-modal {
+    min-width: 90vw !important;
+    max-width: 98vw !important;
+    width: 98vw !important;
+    height: auto !important;
+    min-height: 350px !important;
+    max-height: 98vh !important;
+    padding: 1.2rem 0.5rem !important;
+  }
+}
+.modern-modal {
+  background: #23272f !important;
+  color: #fff !important;
+  font-family: "Inter", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
+  font-size: 1.15rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+.completion-title.answers-revealed {
+  font-size: 2.7rem !important;
+  color: #4caf50 !important;
+  font-weight: 900 !important;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+.bottom-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  margin-top: 1.5rem;
+  width: 100%;
+}
+.share-btn.small {
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.5rem 1.2rem;
+  min-width: 120px;
+  border-radius: 5px;
+  margin: 0 auto;
+}
+
+.summary-title {
+  font-size: 2.3rem;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+.mini-emoji-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 1.2rem 0 0.5rem 0;
+  gap: 0.5rem; // Add vertical spacing between rows
+}
+.mini-emoji-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 0.5rem; // Add horizontal spacing between cells
+}
+.mini-emoji-cell {
+  width: 2.1rem;
+  height: 2.1rem;
+  display: inline-block;
+  border-radius: 4px;
+  margin: 0 0.18em;
+  vertical-align: middle;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+.mini-green {
+  background: #4caf50;
+}
+.mini-gray {
+  background: #bdbdbd;
+}
+.summary-details {
+  margin-bottom: 0.7rem;
+  text-align: center;
+}
+.summary-grid-number {
+  font-size: 1.15rem;
+  color: #81c784;
+  font-weight: 600;
+  margin-bottom: 0.1rem;
+}
+.summary-score {
+  font-size: 1.13rem;
+  color: #fff;
+  font-weight: 500;
 }
 </style>
