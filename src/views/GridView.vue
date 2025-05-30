@@ -519,7 +519,6 @@ const gridNumber = computed(() => (gridId.value ? getGridNumber(gridId.value) : 
 }
 
 .igdb-footer {
-  width: 100vw;
   background: #181818;
   color: #bbb;
   text-align: center;
@@ -531,9 +530,6 @@ const gridNumber = computed(() => (gridId.value ? getGridNumber(gridId.value) : 
   justify-content: center;
   gap: 0.5rem;
   margin-top: 2rem;
-  position: fixed;
-  left: 0;
-  bottom: 0;
   z-index: 3000;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.12);
   span {
