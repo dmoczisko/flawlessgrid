@@ -6,7 +6,7 @@ const games = ref<Game[]>([]);
 const gridId = ref<string | null>(null);
 
 onMounted(async () => {
-  const res = await fetch("http://localhost:3001/api/games");
+  const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/games`);
   const data = await res.json();
   games.value = data.games;
   gridId.value = data.gridId;
@@ -67,7 +67,9 @@ async function searchGames() {
     return;
   }
   const res = await fetch(
-    `http://localhost:3001/api/search?query=${encodeURIComponent(searchQuery.value)}`
+    `${import.meta.env.VITE_API_BASE_URL}/api/search?query=${encodeURIComponent(
+      searchQuery.value
+    )}`
   );
   searchResults.value = await res.json();
 }
