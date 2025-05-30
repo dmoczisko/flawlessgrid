@@ -14,6 +14,33 @@ let tokenExpiry = 0
 
 let cachedGrid: { date: string; games: Game[] } = { date: '', games: [] }
 
+// Simple seeded random number generator
+function seededRandom(seed: number) {
+  const x = Math.sin(seed) * 10000
+  return x - Math.floor(x)
+}
+
+// Generate deterministic "random" selection based on date
+function selectGamesForDate(games: Game[], date: string, count: number = 9): Game[] {
+  const dateNum = new Date(date).getTime()
+  const selectedGames = []
+  const usedIndexes = new Set<number>()
+
+  let seedOffset = 0
+  while (selectedGames.length < count && usedIndexes.size < games.length) {
+    const random = seededRandom(dateNum + seedOffset)
+    const idx = Math.floor(random * games.length)
+
+    if (!usedIndexes.has(idx)) {
+      selectedGames.push(games[idx])
+      usedIndexes.add(idx)
+    }
+    seedOffset++
+  }
+
+  return selectedGames
+}
+
 // Get Twitch access token
 async function getAccessToken(): Promise<string> {
   if (accessToken && Date.now() < tokenExpiry) return accessToken
@@ -57,15 +84,7 @@ app.get('/api/games', (req: Request, res: Response) => {
       )
       // Randomly select 9 games
       const allGames = igdbRes.data
-      const selectedGames = []
-      const usedIndexes = new Set<number>()
-      while (selectedGames.length < 9 && usedIndexes.size < allGames.length) {
-        const idx = Math.floor(Math.random() * allGames.length)
-        if (!usedIndexes.has(idx)) {
-          selectedGames.push(allGames[idx])
-          usedIndexes.add(idx)
-        }
-      }
+      const selectedGames = selectGamesForDate(allGames, today)
       cachedGrid = { date: today, games: selectedGames }
       res.json({ games: selectedGames, gridId: today })
     } catch (err: unknown) {
