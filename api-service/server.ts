@@ -74,12 +74,11 @@ app.get('/api/games', (req: Request, res: Response) => {
       // Fetch 50 games released before the current month, with quality filters
       const igdbRes = await axios.post(
         'https://api.igdb.com/v4/games',
-        `fields name, id, cover.url, screenshots.url, first_release_date, popularity, rating, total_rating_count, summary; \
+        `fields name, id, cover.url, screenshots.url, first_release_date, rating, total_rating_count, summary; \
          where screenshots != null \
            & cover != null \
            & first_release_date != null \
            & first_release_date < ${monthTimestamp} \
-           & popularity > 10 \
            & rating > 60 \
            & total_rating_count > 10 \
            & summary != null; \
@@ -91,7 +90,8 @@ app.get('/api/games', (req: Request, res: Response) => {
           },
         },
       )
-      // Remove duplicate game names, keep first occurrence
+
+      // Removes duplicate game names, keep first occurrence
       const allGames = igdbRes.data
       const uniqueGames: Game[] = []
       const seenNames = new Set<string>()
@@ -101,7 +101,7 @@ app.get('/api/games', (req: Request, res: Response) => {
           seenNames.add(game.name)
         }
       }
-      // Randomly select 9 games
+      // Randomly selects 9 games
       const selectedGames = selectGamesForDate(uniqueGames, today)
       cachedGrid = { date: today, games: selectedGames }
       res.json({ games: selectedGames, gridId: today })
