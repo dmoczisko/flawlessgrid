@@ -303,8 +303,24 @@ function getMiniGridClass(idx: number) {
     <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
       <div class="modal">
         <button class="close-btn" @click="closeModal">&times;</button>
-        <div class="guess-counter">Incorrect guesses: {{ incorrectGuesses }} / 5</div>
-        <h3>Guess the Game</h3>
+        <div class="guess-counter modal-guess-counter">
+          Incorrect guesses: {{ incorrectGuesses }} / 5
+        </div>
+        <h3 class="modal-guess-title">Guess the Game</h3>
+        <div v-if="selectedGame" class="modal-screenshot-wrapper">
+          <img
+            v-if="getScreenshotUrl(selectedGame)"
+            :src="getScreenshotUrl(selectedGame)"
+            :alt="' screenshot'"
+            class="modal-screenshot"
+          />
+          <img
+            v-else-if="getCoverUrl(selectedGame)"
+            :src="getCoverUrl(selectedGame)"
+            :alt="' cover'"
+            class="modal-screenshot"
+          />
+        </div>
         <input
           ref="searchInput"
           v-model="searchQuery"
@@ -613,12 +629,18 @@ function getMiniGridClass(idx: number) {
   cursor: pointer;
 }
 .search-input {
-  width: 100%;
-  padding: 0.5rem;
-  margin-bottom: 1rem;
-  border-radius: 6px;
-  border: 1px solid #444;
-  font-size: 1rem;
+  font-size: 1.18rem;
+  padding: 0.7rem;
+  border-radius: 8px;
+  border: 1.5px solid #444;
+  margin-bottom: 1.2rem;
+  background: #23272f;
+  color: #fff;
+  font-family: "Inter", "Segoe UI", "Roboto", Arial, sans-serif;
+}
+.search-input::placeholder {
+  color: #bbb;
+  opacity: 1;
 }
 .search-results {
   list-style: none;
@@ -628,28 +650,22 @@ function getMiniGridClass(idx: number) {
   overflow-y: auto;
 }
 .search-results li {
-  padding: 0.5rem;
-  cursor: pointer;
-  border-bottom: 1px solid #333;
-  display: flex;
-  align-items: center;
-}
-.search-results li img {
-  width: 32px;
-  height: 32px;
-  object-fit: cover;
-  margin-right: 8px;
-  border-radius: 4px;
-  vertical-align: middle;
+  font-size: 1.13rem;
+  padding: 0.7rem 0.5rem;
+  border-radius: 6px;
+  margin-bottom: 0.2rem;
+  transition: background 0.18s;
 }
 .search-results li:hover {
   background: #333;
 }
 .guess-result {
-  font-size: 1.2rem;
-  font-weight: bold;
-  margin-top: 1rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin-top: 1.2rem;
   text-align: center;
+  letter-spacing: 0.01em;
+  font-family: "Inter", "Segoe UI", "Roboto", Arial, sans-serif;
 }
 .guess-result {
   color: #4caf50;
@@ -908,5 +924,42 @@ body {
   font-size: 1.13rem;
   color: #fff;
   font-weight: 500;
+}
+
+/* Add styles for modal screenshot and improved modal UI */
+.modal-guess-title {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: #fff;
+  text-align: center;
+  margin: 0.7rem 0 1.1rem 0;
+  letter-spacing: 0.01em;
+  font-family: "Inter", "Segoe UI", "Roboto", Arial, sans-serif;
+}
+.modal-guess-counter {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #e57373;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.01em;
+  font-family: "Inter", "Segoe UI", "Roboto", Arial, sans-serif;
+}
+.modal-screenshot-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 1.2rem;
+}
+.modal-screenshot {
+  width: 100%;
+  max-height: 400px;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+  object-fit: cover;
+  display: block;
+  margin: 0 auto;
 }
 </style>
