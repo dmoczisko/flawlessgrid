@@ -93,6 +93,11 @@ The backend is in `/api-service` and uses Express and Axios to fetch data from I
    npm start
    ```
 
+## Production
+
+Frontend hosted in [Cloudflare](https://www.cloudflare.com/)
+Backend api-service hosted in [Render](https://render.com/)
+
 ## Contributing
 
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
