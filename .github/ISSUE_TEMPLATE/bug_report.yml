@@ -1,0 +1,55 @@
+name: Bug report
+description: Report a problem or unexpected behavior
+title: '[Bug]: '
+labels: [bug]
+body:
+  - type: checkboxes
+    attributes:
+      label: Is there an existing issue for this?
+      description: Please search to see if an issue already exists for your bug.
+      options:
+        - label: I have searched the existing issues
+          required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser, or device (if relevant)
+      placeholder: 'e.g. Windows 11, Chrome 123, iPhone 15'
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can we reproduce the bug?
+      placeholder: "1. Go to...\n2. Click on...\n3. See error"
+      value: |
+        1. 
+        2. 
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened?
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or videos
+      description: If applicable, add screenshots or a video to help explain your problem.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Paste any error messages or logs here.
+      render: shell
