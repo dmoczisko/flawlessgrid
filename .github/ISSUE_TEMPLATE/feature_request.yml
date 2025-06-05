@@ -2,6 +2,8 @@ name: Feature request
 description: Suggest an idea or improvement
 title: '[Feature]: '
 labels: [enhancement]
+assignees:
+  - dmoczisko
 body:
   - type: checkboxes
     attributes:
