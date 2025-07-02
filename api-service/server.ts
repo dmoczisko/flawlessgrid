@@ -9,6 +9,9 @@ dotenv.config()
 const app = express()
 app.use(cors())
 
+// Serve static files from public directory (for Docker/production)
+app.use(express.static('public'))
+
 let accessToken = ''
 let tokenExpiry = 0
 
@@ -148,6 +151,11 @@ app.get('/api/search', (req: Request, res: Response) => {
       }
     }
   })()
+})
+
+// Catch-all handler: send back Vue's index.html file for any non-API routes
+app.get('/', (req, res) => {
+  res.sendFile('index.html', { root: 'public' })
 })
 
 const PORT = process.env.PORT || 3001

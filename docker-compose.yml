@@ -1,0 +1,8 @@
+services:
+  gamegrid:
+    build: .
+    ports:
+      - '3001:3001'
+    volumes:
+      # Mount .env file so the container can read environment variables
+      - ./api-service/.env:/app/.env:ro
