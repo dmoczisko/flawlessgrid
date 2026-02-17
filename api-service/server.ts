@@ -7,7 +7,8 @@ import cors from 'cors'
 dotenv.config()
 
 const app = express()
-app.use(cors())
+const corsOrigin = process.env.ALLOWED_ORIGIN
+app.use(cors(corsOrigin ? { origin: corsOrigin } : {}))
 
 // Serve static files from public directory (for Docker/production)
 app.use(express.static('public'))
@@ -16,6 +17,28 @@ let accessToken = ''
 let tokenExpiry = 0
 
 let cachedGrid: { date: string; games: Game[] } = { date: '', games: [] }
+
+const searchRateLimit = new Map<string, { count: number; resetTime: number }>()
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const record = searchRateLimit.get(ip)
+  if (!record || now > record.resetTime) {
+    searchRateLimit.set(ip, { count: 1, resetTime: now + 60_000 })
+    return false
+  }
+  if (record.count >= 30) return true
+  record.count++
+  return false
+}
+
+// Clean up expired rate limit entries every 5 minutes
+setInterval(() => {
+  const now = Date.now()
+  for (const [ip, record] of searchRateLimit.entries()) {
+    if (now > record.resetTime) searchRateLimit.delete(ip)
+  }
+}, 5 * 60_000)
 
 // Simple seeded random number generator
 function seededRandom(seed: number) {
@@ -65,7 +88,7 @@ app.get('/api/games', (req: Request, res: Response) => {
   ;(async () => {
     try {
       const today = new Date().toISOString().slice(0, 10) // e.g., '2024-05-30'
-      if (cachedGrid.date === today && cachedGrid.games.length === 9) {
+      if (cachedGrid.date === today && cachedGrid.games.length > 0) {
         return res.json({ games: cachedGrid.games, gridId: cachedGrid.date })
       }
       const now = new Date()
@@ -74,7 +97,9 @@ app.get('/api/games', (req: Request, res: Response) => {
       const monthTimestamp = Math.floor(firstOfMonth.getTime() / 1000)
 
       const token = await getAccessToken()
-      // Fetch 50 games released before the current month, with quality filters
+      // Fetch up to 500 games (IGDB max) sorted consistently by popularity.
+      // Sorting by total_rating_count desc ensures the same stable pool every day,
+      // so the date-seeded selection always produces a unique, non-repeating grid.
       const igdbRes = await axios.post(
         'https://api.igdb.com/v4/games',
         `fields name, id, cover.url, screenshots.url, first_release_date, rating, total_rating_count, summary; \
@@ -85,7 +110,8 @@ app.get('/api/games', (req: Request, res: Response) => {
            & rating > 60 \
            & total_rating_count > 10 \
            & summary != null; \
-         limit 50;`,
+         sort total_rating_count desc; \
+         limit 500;`,
         {
           headers: {
             'Client-ID': process.env.TWITCH_CLIENT_ID as string,
@@ -125,8 +151,12 @@ app.get('/api/search', (req: Request, res: Response) => {
   ;(async () => {
     try {
       const query = req.query.query as string
-      if (!query) {
-        return res.status(400).json({ error: 'Missing query parameter' })
+      if (!query || query.trim().length < 2) {
+        return res.status(400).json({ error: 'Query must be at least 2 characters' })
+      }
+      const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ?? req.ip ?? 'unknown'
+      if (isRateLimited(ip)) {
+        return res.status(429).json({ error: 'Too many requests, please slow down.' })
       }
       const token = await getAccessToken()
       const igdbRes = await axios.post(

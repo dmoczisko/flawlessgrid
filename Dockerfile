@@ -30,9 +30,6 @@ COPY --from=frontend-build /app/src/types/ ./src/types/
 WORKDIR /app
 COPY --from=backend-build /app ./
 
-# Copy environment file if it exists
-COPY api-service/.env* ./
-
 # Copy built frontend
 COPY --from=frontend-build /app/dist ./public
 

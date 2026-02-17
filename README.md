@@ -38,6 +38,16 @@ npm install
 
 ### Compile and Hot-Reload for Development
 
+To run the full app locally (frontend + backend together):
+
+```sh
+npm run dev:all
+```
+
+This starts both the Vite dev server (port 5173) and the Express API (port 3001) in parallel from the project root. The frontend will hot-reload on changes; restart the command to pick up backend changes.
+
+If you only need the frontend (e.g. UI work with a separately running backend):
+
 ```sh
 npm run dev
 ```
@@ -80,17 +90,12 @@ npm run lint
 
 The backend is in `/api-service` and uses Express and Axios to fetch data from IGDB.
 
-1. Copy `.env.example` to `.env` and fill in your Twitch/IGDB credentials.
-2. Install dependencies:
+1. Copy `api-service/.env.example` to `api-service/.env` and fill in your Twitch/IGDB credentials.
+2. Install backend dependencies:
    ```sh
-   cd api-service
-   npm install
+   npm install --prefix api-service
    ```
-3. Start the server:
-   ```sh
-   cd api-service
-   npm start
-   ```
+3. Use `npm run dev:all` from the project root to start both frontend and backend together (see above).
 
 ## Production
 

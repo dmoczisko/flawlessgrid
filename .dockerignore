@@ -1,0 +1,17 @@
+node_modules
+api-service/node_modules
+dist
+dist-ssr
+coverage
+.vite
+
+# Never bake credentials into the image
+*.env
+.env*
+api-service/.env
+api-service/.env.*
+
+# Dev/test artifacts
+cypress/videos
+cypress/screenshots
+*.log

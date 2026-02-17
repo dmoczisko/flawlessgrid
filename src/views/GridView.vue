@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, watch } from "vue";
 import type { Game } from "../types/Game";
+import { getTitlePlaceholder, getGridNumber } from "../utils/gameUtils";
+
+const isDev = import.meta.env.DEV;
 
 const games = ref<Game[]>([]);
 const gridId = ref<string | null>(null);
 const isLoading = ref(true);
+const isError = ref(false);
 const searchInput = ref<HTMLInputElement | null>(null); // Add ref for input
 
 const showModal = ref(false);
@@ -35,11 +39,17 @@ function saveProgress() {
 
 onMounted(async () => {
   isLoading.value = true;
-  const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/games`);
-  const data = await res.json();
-  games.value = data.games;
-  gridId.value = data.gridId;
-  isLoading.value = false;
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/games`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    games.value = data.games;
+    gridId.value = data.gridId;
+  } catch {
+    isError.value = true;
+  } finally {
+    isLoading.value = false;
+  }
 
   // Restore progress from localStorage if available
   if (gridId.value) {
@@ -121,17 +131,30 @@ function closeModal() {
   guessResult.value = null;
 }
 
-async function searchGames() {
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+function searchGames() {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
   if (!searchQuery.value) {
     searchResults.value = [];
     return;
   }
-  const res = await fetch(
-    `${import.meta.env.VITE_API_BASE_URL}/api/search?query=${encodeURIComponent(
-      searchQuery.value
-    )}`
-  );
-  searchResults.value = await res.json();
+  searchDebounceTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/search?query=${encodeURIComponent(
+          searchQuery.value
+        )}`
+      );
+      if (!res.ok) {
+        searchResults.value = [];
+        return;
+      }
+      searchResults.value = await res.json();
+    } catch {
+      searchResults.value = [];
+    }
+  }, 300);
 }
 
 function checkCompletion() {
@@ -167,16 +190,6 @@ function makeGuess(game: Game) {
   }
 }
 
-function getTitlePlaceholder(game: Game) {
-  if (!game.name) return "";
-  // Split by words and punctuation, keep colons and other punctuation
-  const tokens = game.name.trim().split(/(\s+|[:.,!?;])/);
-  return tokens
-    .map((token) => (/\w+/.test(token) ? "_" : token))
-    .join("")
-    .replace(/\s+/g, " ");
-}
-
 const revealAll = () => {
   buttonText.value = "Summary";
   closeModal();
@@ -185,13 +198,15 @@ const revealAll = () => {
   saveProgress();
 };
 
-// Helper to generate a sequential grid number based on the date
-function getGridNumber(dateStr: string): number {
-  // Example: count days since a fixed start date (e.g., Jan 1, 2024)
-  const start = new Date("2025-01-01");
-  const current = new Date(dateStr);
-  const diff = Math.floor((current.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-  return diff + 1; // Grid #1 is Jan 1, 2024
+function resetGrid() {
+  if (gridId.value) localStorage.removeItem(`gamegrid-progress-${gridId.value}`);
+  flippedCells.value = new Set();
+  incorrectGuesses.value = 0;
+  answersRevealed.value = false;
+  buttonText.value = "Give Up & Reveal Answers";
+  completionModal.value = false;
+  completionType.value = null;
+  closeModal();
 }
 
 const gridNumber = computed(() => (gridId.value ? getGridNumber(gridId.value) : null));
@@ -255,6 +270,11 @@ function getMiniGridClass(idx: number) {
           </div>
         </div>
       </template>
+      <template v-else-if="isError">
+        <div class="load-error">
+          Failed to load today's grid. Please try refreshing the page.
+        </div>
+      </template>
       <template v-else>
         <div
           v-for="(game, idx) in games"
@@ -281,7 +301,7 @@ function getMiniGridClass(idx: number) {
                 class="game-cover"
               />
               <div class="year-bar">
-                {{ getTitlePlaceholder(game) }} ({{ getReleaseYear(game) }})
+                {{ getTitlePlaceholder(game.name) }} ({{ getReleaseYear(game) }})
               </div>
             </div>
             <div class="card-back">
@@ -364,6 +384,7 @@ function getMiniGridClass(idx: number) {
     </div>
   </div>
   <button class="give-up-btn" @click="revealAll">{{ buttonText }}</button>
+  <button v-if="isDev" class="reset-btn" @click="resetGrid">↺ Reset (dev)</button>
 
   <div v-if="completionModal" class="modal-overlay" @click.self="completionModal = false">
     <div class="modal completion-modal modern-modal">
@@ -698,6 +719,21 @@ function getMiniGridClass(idx: number) {
 .give-up-btn:hover {
   background: #d32f2f;
 }
+.reset-btn {
+  display: block;
+  margin: 0 auto 1rem auto;
+  background: none;
+  border: 1px dashed #555;
+  color: #888;
+  border-radius: 6px;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.reset-btn:hover {
+  border-color: #aaa;
+  color: #ccc;
+}
 .grid-id {
   width: 100%;
   text-align: center;
@@ -924,6 +960,15 @@ body {
   font-size: 1.13rem;
   color: #fff;
   font-weight: 500;
+}
+
+.load-error {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 1rem;
+  font-size: 1.2rem;
+  color: #e57373;
+  font-weight: 600;
 }
 
 /* Add styles for modal screenshot and improved modal UI */

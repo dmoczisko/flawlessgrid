@@ -1,0 +1,68 @@
+{
+  "gridId": "2025-01-01",
+  "games": [
+    {
+      "id": 1942,
+      "name": "The Legend of Zelda: Breath of the Wild",
+      "cover": { "url": "//images.igdb.com/igdb/image/upload/t_thumb/co1ybr.jpg" },
+      "screenshots": [{ "url": "//images.igdb.com/igdb/image/upload/t_thumb/sc9yik.jpg" }],
+      "first_release_date": 1488499200
+    },
+    {
+      "id": 121,
+      "name": "Dark Souls",
+      "cover": { "url": "//images.igdb.com/igdb/image/upload/t_thumb/co2uro.jpg" },
+      "screenshots": [{ "url": "//images.igdb.com/igdb/image/upload/t_thumb/scb8yd.jpg" }],
+      "first_release_date": 1314316800
+    },
+    {
+      "id": 1020,
+      "name": "Portal 2",
+      "cover": { "url": "//images.igdb.com/igdb/image/upload/t_thumb/co1rgi.jpg" },
+      "screenshots": [{ "url": "//images.igdb.com/igdb/image/upload/t_thumb/sc8cqq.jpg" }],
+      "first_release_date": 1302739200
+    },
+    {
+      "id": 1493,
+      "name": "The Witcher 3: Wild Hunt",
+      "cover": { "url": "//images.igdb.com/igdb/image/upload/t_thumb/co1wyy.jpg" },
+      "screenshots": [{ "url": "//images.igdb.com/igdb/image/upload/t_thumb/sc7aqz.jpg" }],
+      "first_release_date": 1431993600
+    },
+    {
+      "id": 19560,
+      "name": "Hollow Knight",
+      "cover": { "url": "//images.igdb.com/igdb/image/upload/t_thumb/co3szp.jpg" },
+      "screenshots": [{ "url": "//images.igdb.com/igdb/image/upload/t_thumb/sc7aqz.jpg" }],
+      "first_release_date": 1488672000
+    },
+    {
+      "id": 1771,
+      "name": "Undertale",
+      "cover": { "url": "//images.igdb.com/igdb/image/upload/t_thumb/co29dg.jpg" },
+      "screenshots": [{ "url": "//images.igdb.com/igdb/image/upload/t_thumb/scb8yd.jpg" }],
+      "first_release_date": 1443398400
+    },
+    {
+      "id": 7346,
+      "name": "Celeste",
+      "cover": { "url": "//images.igdb.com/igdb/image/upload/t_thumb/co1tmu.jpg" },
+      "screenshots": [{ "url": "//images.igdb.com/igdb/image/upload/t_thumb/sc8cqq.jpg" }],
+      "first_release_date": 1515542400
+    },
+    {
+      "id": 113111,
+      "name": "Hades",
+      "cover": { "url": "//images.igdb.com/igdb/image/upload/t_thumb/co3mtk.jpg" },
+      "screenshots": [{ "url": "//images.igdb.com/igdb/image/upload/t_thumb/sc9yik.jpg" }],
+      "first_release_date": 1600387200
+    },
+    {
+      "id": 130254,
+      "name": "Disco Elysium",
+      "cover": { "url": "//images.igdb.com/igdb/image/upload/t_thumb/co3iln.jpg" },
+      "screenshots": [{ "url": "//images.igdb.com/igdb/image/upload/t_thumb/scb8yd.jpg" }],
+      "first_release_date": 1572048000
+    }
+  ]
+}
