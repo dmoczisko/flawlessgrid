@@ -6,6 +6,7 @@ Game Grid is a daily puzzle game where players guess video games based on screen
 
 - Daily 3x3 grid of games to guess
 - Guess by searching game titles
+- Cycle through multiple screenshots per game to get more hints
 - Limited number of incorrect guesses (lives system)
 - Reveal answers and share your results
 - Responsive, modern UI
@@ -97,10 +98,22 @@ The backend is in `/api-service` and uses Express and Axios to fetch data from I
    ```
 3. Use `npm run dev:all` from the project root to start both frontend and backend together (see above).
 
+**Optional: persistent daily grid caching**
+
+By default the daily grid is cached in memory and lost on server restart. To persist it across restarts, create a free [Neon](https://neon.tech) PostgreSQL project and add the connection string to `api-service/.env`:
+
+```
+DATABASE_URL=postgresql://user:pass@host/dbname?sslmode=require
+```
+
+The table is created automatically on first server start. Leave `DATABASE_URL` unset for local development — the server works fine without it.
+
 ## Production
 
 Frontend hosted in [Cloudflare](https://www.cloudflare.com/)
 Backend api-service hosted in [Render](https://render.com/)
+
+A `GET /health` endpoint is available on the backend for uptime monitoring. Point a service like [UptimeRobot](https://uptimerobot.com) at it with a 5-minute interval to keep the server alive on Render's free tier.
 
 ## Contributing
 

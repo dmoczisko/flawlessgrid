@@ -3,8 +3,16 @@ import dotenv from 'dotenv'
 import express, { Request, Response } from 'express'
 import axios from 'axios'
 import cors from 'cors'
+import { neon } from '@neondatabase/serverless'
 
 dotenv.config()
+
+const db = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null
+
+if (db) {
+  db`CREATE TABLE IF NOT EXISTS daily_grid (date TEXT PRIMARY KEY, games JSONB NOT NULL)`
+    .catch(err => console.error('DB setup error:', err))
+}
 
 const app = express()
 const corsOrigin = process.env.ALLOWED_ORIGIN
@@ -82,6 +90,10 @@ async function getAccessToken(): Promise<string> {
   return accessToken
 }
 
+app.get('/health', (_req: Request, res: Response) => {
+  res.json({ status: 'ok' })
+})
+
 // Fix for Express/TypeScript async handler overload error
 // Use a non-async handler and call an async IIFE inside
 app.get('/api/games', (req: Request, res: Response) => {
@@ -91,6 +103,16 @@ app.get('/api/games', (req: Request, res: Response) => {
       if (cachedGrid.date === today && cachedGrid.games.length > 0) {
         return res.json({ games: cachedGrid.games, gridId: cachedGrid.date })
       }
+
+      // Check DB for today's grid before hitting IGDB
+      if (db) {
+        const rows = await db`SELECT games FROM daily_grid WHERE date = ${today}`
+        if (rows.length > 0) {
+          cachedGrid = { date: today, games: rows[0].games as Game[] }
+          return res.json({ games: cachedGrid.games, gridId: today })
+        }
+      }
+
       const now = new Date()
       // Get the timestamp for the start of the current month
       const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -133,6 +155,13 @@ app.get('/api/games', (req: Request, res: Response) => {
       // Randomly selects 9 games
       const selectedGames = selectGamesForDate(uniqueGames, today)
       cachedGrid = { date: today, games: selectedGames }
+
+      // Persist to DB (fire-and-forget — don't block the response)
+      if (db) {
+        db`INSERT INTO daily_grid (date, games) VALUES (${today}, ${JSON.stringify(selectedGames)}) ON CONFLICT (date) DO NOTHING`
+          .catch(err => console.error('DB write error:', err))
+      }
+
       res.json({ games: selectedGames, gridId: today })
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
