@@ -3,8 +3,16 @@ import dotenv from 'dotenv'
 import express, { Request, Response } from 'express'
 import axios from 'axios'
 import cors from 'cors'
+import { neon } from '@neondatabase/serverless'
 
 dotenv.config()
+
+const db = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null
+
+if (db) {
+  db`CREATE TABLE IF NOT EXISTS daily_grid (date TEXT PRIMARY KEY, games JSONB NOT NULL)`
+    .catch(err => console.error('DB setup error:', err))
+}
 
 const app = express()
 const corsOrigin = process.env.ALLOWED_ORIGIN
@@ -80,6 +88,10 @@ async function getAccessToken(): Promise<string> {
   return accessToken
 }
 
+app.get('/health', (_req: Request, res: Response) => {
+  res.json({ status: 'ok' })
+})
+
 // Fix for Express/TypeScript async handler overload error
 // Use a non-async handler and call an async IIFE inside
 app.get('/api/games', (req: Request, res: Response) => {
@@ -148,6 +160,13 @@ app.get('/api/games', (req: Request, res: Response) => {
       // Randomly selects 9 games
       const selectedGames = selectGamesForDate(uniqueGames, today)
       cachedGrid = { date: today, games: selectedGames }
+
+      // Persist to DB (fire-and-forget — don't block the response)
+      if (db) {
+        db`INSERT INTO daily_grid (date, games) VALUES (${today}, ${JSON.stringify(selectedGames)}) ON CONFLICT (date) DO NOTHING`
+          .catch(err => console.error('DB write error:', err))
+      }
+
       res.json({ games: selectedGames, gridId: today })
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {

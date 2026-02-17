@@ -89,10 +89,43 @@ watch(
   { deep: true }
 );
 
-function getScreenshotUrl(game: Game) {
-  return game.screenshots && game.screenshots.length > 0
-    ? game.screenshots[0].url.replace(/t_\w+/, "t_1080p").replace(/^\/\//, "https://")
+const screenshotIndices = ref(new Map<number, number>());
+const modalScreenshotIndex = ref(0);
+
+function getScreenshotCount(game: Game): number {
+  return game.screenshots?.length ?? 0;
+}
+
+function getScreenshotUrlAt(game: Game, index: number): string {
+  const shots = game.screenshots;
+  if (!shots || shots.length === 0) return "";
+  const url = shots[Math.min(index, shots.length - 1)]?.url ?? "";
+  return url.replace(/t_\w+/, "t_1080p").replace(/^\/\//, "https://");
+}
+
+function getScreenshotUrl(game: Game): string {
+  const index = screenshotIndices.value.get(game.id!) ?? 0;
+  return getScreenshotUrlAt(game, index);
+}
+
+function cycleScreenshot(game: Game, direction: 1 | -1) {
+  const count = getScreenshotCount(game);
+  if (count <= 1) return;
+  const current = screenshotIndices.value.get(game.id!) ?? 0;
+  screenshotIndices.value.set(game.id!, (current + direction + count) % count);
+}
+
+function getModalScreenshotUrl(): string {
+  return selectedGame.value
+    ? getScreenshotUrlAt(selectedGame.value, modalScreenshotIndex.value)
     : "";
+}
+
+function cycleModalScreenshot(direction: 1 | -1) {
+  const count = getScreenshotCount(selectedGame.value!);
+  if (count <= 1) return;
+  modalScreenshotIndex.value =
+    (modalScreenshotIndex.value + direction + count) % count;
 }
 
 function getCoverUrl(game: Game) {
@@ -118,6 +151,7 @@ function openModal(game: Game) {
   searchQuery.value = "";
   searchResults.value = [];
   guessResult.value = null;
+  modalScreenshotIndex.value = 0;
   nextTick(() => {
     searchInput.value?.focus();
   });
@@ -206,6 +240,7 @@ function resetGrid() {
   buttonText.value = "Give Up & Reveal Answers";
   completionModal.value = false;
   completionType.value = null;
+  screenshotIndices.value = new Map();
   closeModal();
 }
 
@@ -300,6 +335,16 @@ function getMiniGridClass(idx: number) {
                 :alt="' cover'"
                 class="game-cover"
               />
+              <div
+                v-if="getScreenshotCount(game) > 1"
+                class="screenshot-nav"
+              >
+                <button class="screenshot-nav-btn" @click.stop="cycleScreenshot(game, -1)">&#8249;</button>
+                <span class="screenshot-nav-dots">
+                  {{ (screenshotIndices.get(game.id!) ?? 0) + 1 }} / {{ getScreenshotCount(game) }}
+                </span>
+                <button class="screenshot-nav-btn" @click.stop="cycleScreenshot(game, 1)">&#8250;</button>
+              </div>
               <div class="year-bar">
                 {{ getTitlePlaceholder(game.name) }} ({{ getReleaseYear(game) }})
               </div>
@@ -329,8 +374,8 @@ function getMiniGridClass(idx: number) {
         <h3 class="modal-guess-title">Guess the Game</h3>
         <div v-if="selectedGame" class="modal-screenshot-wrapper">
           <img
-            v-if="getScreenshotUrl(selectedGame)"
-            :src="getScreenshotUrl(selectedGame)"
+            v-if="getModalScreenshotUrl()"
+            :src="getModalScreenshotUrl()"
             :alt="' screenshot'"
             class="modal-screenshot"
           />
@@ -340,6 +385,13 @@ function getMiniGridClass(idx: number) {
             :alt="' cover'"
             class="modal-screenshot"
           />
+          <div v-if="getScreenshotCount(selectedGame) > 1" class="screenshot-nav modal-nav">
+            <button class="screenshot-nav-btn" @click="cycleModalScreenshot(-1)">&#8249;</button>
+            <span class="screenshot-nav-dots">
+              {{ modalScreenshotIndex + 1 }} / {{ getScreenshotCount(selectedGame) }}
+            </span>
+            <button class="screenshot-nav-btn" @click="cycleModalScreenshot(1)">&#8250;</button>
+          </div>
         </div>
         <input
           ref="searchInput"
@@ -969,6 +1021,67 @@ body {
   font-size: 1.2rem;
   color: #e57373;
   font-weight: 600;
+}
+
+.screenshot-nav {
+  position: absolute;
+  bottom: 44px; // sits just above the year-bar
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.grid-cell:hover .screenshot-nav {
+  opacity: 1;
+}
+
+.screenshot-nav-btn {
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.screenshot-nav-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.screenshot-nav-dots {
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  min-width: 36px;
+  text-align: center;
+}
+
+.modal-nav {
+  position: relative;
+  bottom: auto;
+  opacity: 1;
+  margin-top: 0.6rem;
+  justify-content: center;
+}
+
+.modal-nav .screenshot-nav-dots {
+  color: #ccc;
+  text-shadow: none;
 }
 
 /* Add styles for modal screenshot and improved modal UI */
