@@ -10,8 +10,6 @@ const app = express()
 const corsOrigin = process.env.ALLOWED_ORIGIN
 app.use(cors(corsOrigin ? { origin: corsOrigin } : {}))
 
-// Serve static files from public directory (for Docker/production)
-app.use(express.static('public'))
 
 let accessToken = ''
 let tokenExpiry = 0
@@ -91,6 +89,23 @@ app.get('/api/games', (req: Request, res: Response) => {
       if (cachedGrid.date === today && cachedGrid.games.length > 0) {
         return res.json({ games: cachedGrid.games, gridId: cachedGrid.date })
       }
+<<<<<<< Updated upstream
+=======
+
+      // Check DB for today's grid before hitting IGDB
+      if (db) {
+        try {
+          const rows = await db`SELECT games FROM daily_grid WHERE date = ${today}`
+          if (rows.length > 0) {
+            cachedGrid = { date: today, games: rows[0].games as Game[] }
+            return res.json({ games: cachedGrid.games, gridId: today })
+          }
+        } catch (dbErr) {
+          console.error('DB read error, falling back to IGDB:', dbErr)
+        }
+      }
+
+>>>>>>> Stashed changes
       const now = new Date()
       // Get the timestamp for the start of the current month
       const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -183,10 +198,6 @@ app.get('/api/search', (req: Request, res: Response) => {
   })()
 })
 
-// Catch-all handler: send back Vue's index.html file for any non-API routes
-app.get('/', (req, res) => {
-  res.sendFile('index.html', { root: 'public' })
-})
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`))
