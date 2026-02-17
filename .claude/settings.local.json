@@ -3,7 +3,8 @@
     "allow": [
       "Bash(git check-ignore:*)",
       "Bash(npx vitest run:*)",
-      "Bash(npx vue-tsc:*)"
+      "Bash(npx vue-tsc:*)",
+      "Bash(npm install:*)"
     ]
   }
 }
