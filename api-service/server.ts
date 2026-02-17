@@ -184,6 +184,10 @@ app.get('/api/search', (req: Request, res: Response) => {
       if (!query || query.trim().length < 2) {
         return res.status(400).json({ error: 'Query must be at least 2 characters' })
       }
+      const sanitizedQuery = query.replace(/["\\;]/g, '').trim()
+      if (sanitizedQuery.length < 2) {
+        return res.status(400).json({ error: 'Query must be at least 2 characters' })
+      }
       const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ?? req.ip ?? 'unknown'
       if (isRateLimited(ip)) {
         return res.status(429).json({ error: 'Too many requests, please slow down.' })
@@ -191,7 +195,7 @@ app.get('/api/search', (req: Request, res: Response) => {
       const token = await getAccessToken()
       const igdbRes = await axios.post(
         'https://api.igdb.com/v4/games',
-        `search "${query}"; fields name, id, first_release_date, cover.url; limit 10;`,
+        `search "${sanitizedQuery}"; fields name, id, first_release_date, cover.url; limit 10;`,
         {
           headers: {
             'Client-ID': process.env.TWITCH_CLIENT_ID as string,
