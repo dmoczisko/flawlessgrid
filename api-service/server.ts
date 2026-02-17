@@ -18,7 +18,6 @@ const app = express()
 const corsOrigin = process.env.ALLOWED_ORIGIN
 app.use(cors(corsOrigin ? { origin: corsOrigin } : {}))
 
-
 let accessToken = ''
 let tokenExpiry = 0
 
@@ -101,8 +100,6 @@ app.get('/api/games', (req: Request, res: Response) => {
       if (cachedGrid.date === today && cachedGrid.games.length > 0) {
         return res.json({ games: cachedGrid.games, gridId: cachedGrid.date })
       }
-<<<<<<< Updated upstream
-=======
 
       // Check DB for today's grid before hitting IGDB
       if (db) {
@@ -117,7 +114,6 @@ app.get('/api/games', (req: Request, res: Response) => {
         }
       }
 
->>>>>>> Stashed changes
       const now = new Date()
       // Get the timestamp for the start of the current month
       const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -216,7 +212,6 @@ app.get('/api/search', (req: Request, res: Response) => {
     }
   })()
 })
-
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`))
