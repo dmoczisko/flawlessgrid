@@ -196,7 +196,7 @@ app.get('/api/search', (req: Request, res: Response) => {
       const token = await getAccessToken()
       const igdbRes = await axios.post(
         'https://api.igdb.com/v4/games',
-        `search "${sanitizedQuery}"; fields name, id, first_release_date, cover.url; limit 10;`,
+        `search "${sanitizedQuery}"; fields name, id, first_release_date, cover.url; limit 20;`,
         {
           headers: {
             'Client-ID': process.env.TWITCH_CLIENT_ID as string,
