@@ -132,7 +132,8 @@ app.get('/api/games', (req: Request, res: Response) => {
            & first_release_date < ${monthTimestamp} \
            & rating > 60 \
            & total_rating_count > 10 \
-           & summary != null; \
+           & summary != null \
+           & (category = 0 | category = 8 | category = 9); \
          sort total_rating_count desc; \
          limit 500;`,
         {

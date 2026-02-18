@@ -329,12 +329,6 @@ function getMiniGridClass(idx: number) {
                 :alt="' screenshot'"
                 class="game-cover"
               />
-              <img
-                v-else-if="getCoverUrl(game)"
-                :src="getCoverUrl(game)"
-                :alt="' cover'"
-                class="game-cover"
-              />
               <div
                 v-if="getScreenshotCount(game) > 1"
                 class="screenshot-nav"
