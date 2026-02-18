@@ -1,0 +1,21 @@
+name: Daily Grid Prefetch
+
+"on":
+  schedule:
+    - cron: '0 3 * * *'  # 3am UTC every day
+  workflow_dispatch:       # allow manual trigger from GitHub UI
+
+jobs:
+  prefetch:
+    name: Wake Render and prefetch today's grid
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /api/games
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://gamegrid-api.onrender.com/api/games)
+          echo "Response status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "Prefetch failed with status $STATUS"
+            exit 1
+          fi
+          echo "Grid prefetch successful"
