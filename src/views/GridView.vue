@@ -520,24 +520,25 @@ function getMiniGridClass(idx: number) {
 .grid-cell {
   perspective: 1000px;
   position: relative;
-  background: #ccc;
-  border: 2px solid #000;
-  transition: border-color 0.3s;
+  background: #1c1c1c;
+  border: 1.5px solid rgba(255, 255, 255, 0.07);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   min-width: 300px;
   min-height: 300px;
   display: flex;
   align-items: flex-end; // So the year bar is always at the bottom
   justify-content: center;
   overflow: hidden;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
   padding: 0;
   cursor: pointer;
 }
 
 .grid-cell:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-  filter: brightness(0.97);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .card-inner {
@@ -579,7 +580,8 @@ function getMiniGridClass(idx: number) {
 }
 
 .grid-cell.not-guessed {
-  border: 3px solid #e53935 !important;
+  border: 2px solid #e53935 !important;
+  box-shadow: 0 0 0 1px rgba(229, 57, 53, 0.25), 0 4px 20px rgba(229, 57, 53, 0.15) !important;
 }
 .grid-cell.not-guessed .card-back .year-bar {
   color: #e53935 !important;
@@ -592,12 +594,12 @@ function getMiniGridClass(idx: number) {
 }
 
 .card-back .year-bar {
-  background: rgba(80, 80, 80, 0.9);
+  background: rgba(0, 0, 0, 0.65);
   color: #fff;
-  font-size: 1.1rem;
+  font-size: 1rem;
   text-align: center;
-  padding: 10px 0 6px 0;
-  border-radius: 0 0 12px 12px;
+  padding: 10px 0.5rem 8px 0.5rem;
+  border-radius: 0 0 14px 14px;
   z-index: 3;
   width: 100%;
 }
@@ -610,7 +612,7 @@ function getMiniGridClass(idx: number) {
   height: 100%;
   object-fit: cover;
   z-index: 1;
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
 .year-bar {
@@ -618,14 +620,16 @@ function getMiniGridClass(idx: number) {
   bottom: 0;
   left: 0;
   width: 100%;
-  background: rgba(80, 80, 80, 0.7);
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.88));
   color: #fff;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
   text-align: center;
-  padding: 6px 0;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
+  padding: 2.5rem 0.5rem 0.65rem 0.5rem;
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
   z-index: 2;
+  letter-spacing: 0.2px;
 }
 
 .modal-overlay {
@@ -634,24 +638,26 @@ function getMiniGridClass(idx: number) {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
 }
 .modal {
-  background: #222;
+  background: #1a1a1a;
   color: #fff;
   padding: 2.5rem 2rem;
-  border-radius: 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   min-width: 400px;
   min-height: 350px;
   max-width: 700px;
   max-height: 90vh;
   width: 90vw;
   height: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -740,23 +746,27 @@ function getMiniGridClass(idx: number) {
   border: 3px solid #222;
 }
 .grid-cell.flipped {
-  border: 3px solid #4caf50;
+  border: 2px solid #4caf50;
+  box-shadow: 0 0 0 1px rgba(76, 175, 80, 0.3), 0 4px 20px rgba(76, 175, 80, 0.15);
 }
 .give-up-btn {
-  margin: 2.5rem auto 2rem auto;
+  margin: 2rem auto 1.5rem auto;
   display: block;
-  background: #e57373;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 0.7rem 1.5rem;
-  font-size: 1.1rem;
-  font-weight: 600;
+  background: transparent;
+  color: #666;
+  border: 1px solid #2e2e2e;
+  border-radius: 8px;
+  padding: 0.5rem 1.4rem;
+  font-size: 0.88rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  letter-spacing: 0.4px;
 }
 .give-up-btn:hover {
-  background: #d32f2f;
+  background: #1e1e1e;
+  border-color: #444;
+  color: #aaa;
 }
 .reset-btn {
   display: block;
@@ -776,18 +786,23 @@ function getMiniGridClass(idx: number) {
 .grid-id {
   width: 100%;
   text-align: center;
-  font-size: 1.3rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 700;
   color: #4caf50;
-  margin-top: 1.2rem;
-  letter-spacing: 1px;
+  margin-top: 1.5rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0.8;
 }
 
 .guess-counter {
   width: 100%;
   text-align: center;
-  margin: 1.2rem 0;
-  font-weight: 700;
+  margin: 0.4rem 0 1.4rem 0;
+  font-weight: 500;
+  font-size: 0.88rem;
+  color: #666;
+  letter-spacing: 0.4px;
 }
 
 .igdb-footer {
@@ -848,22 +863,22 @@ body {
 }
 
 .skeleton {
-  background: #e0e0e0;
-  border: 2px solid #bbb;
-  animation: pulse 1.2s infinite ease-in-out;
+  background: #1c1c1c;
+  border: 1.5px solid rgba(255, 255, 255, 0.05);
+  animation: pulse 1.4s infinite ease-in-out;
   cursor: default;
 }
 .skeleton-img {
   width: 100%;
   height: 80%;
-  background: #d0d0d0;
-  border-radius: 12px 12px 0 0;
+  background: #262626;
+  border-radius: 14px 14px 0 0;
   margin-bottom: 0.5rem;
 }
 .skeleton-bar {
-  width: 80%;
-  height: 24px;
-  background: #c0c0c0;
+  width: 60%;
+  height: 16px;
+  background: #202020;
   border-radius: 6px;
   margin: 0 auto 1rem auto;
 }
