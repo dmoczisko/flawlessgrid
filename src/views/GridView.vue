@@ -506,6 +506,8 @@ function getMiniGridClass(idx: number) {
   justify-content: center;
   align-items: center;
   box-sizing: border-box;
+  width: 100%;
+  padding: 0 12px;
 }
 
 .grid-container {
@@ -513,34 +515,6 @@ function getMiniGridClass(idx: number) {
   grid-template-columns: repeat(3, 300px);
   grid-template-rows: repeat(3, 300px);
   gap: 24px;
-}
-
-@media (max-width: 900px) {
-  .grid-container {
-    grid-template-columns: repeat(2, 45vw);
-    grid-template-rows: repeat(5, 45vw);
-    gap: 16px;
-  }
-  .grid-cell {
-    min-width: 45vw;
-    min-height: 45vw;
-    max-width: 90vw;
-    max-height: 90vw;
-  }
-}
-
-@media (max-width: 600px) {
-  .grid-container {
-    grid-template-columns: 1fr;
-    grid-template-rows: none;
-    gap: 12px;
-  }
-  .grid-cell {
-    min-width: 90vw;
-    min-height: 40vw;
-    max-width: 95vw;
-    max-height: 60vw;
-  }
 }
 
 .grid-cell {
@@ -683,12 +657,25 @@ function getMiniGridClass(idx: number) {
   flex-direction: column;
   justify-content: flex-start;
   align-items: stretch;
+  overflow-y: auto;
 }
 @media (max-width: 600px) {
   .modal {
     min-width: 90vw;
     max-width: 98vw;
-    padding: 1.2rem 0.5rem;
+    padding: 1.2rem 0.75rem;
+    max-height: 85vh;
+  }
+  .modal-screenshot {
+    max-height: 200px;
+  }
+  .modal-guess-title {
+    font-size: 1.5rem;
+    margin: 0.4rem 0 0.6rem 0;
+  }
+  .modal-guess-counter {
+    font-size: 1.1rem;
+    margin-bottom: 0.3rem;
   }
 }
 .close-btn {
@@ -1105,6 +1092,7 @@ body {
 }
 .modal-screenshot-wrapper {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   width: 100%;
@@ -1119,5 +1107,37 @@ body {
   object-fit: cover;
   display: block;
   margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .grid-container {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: none;
+    gap: 16px;
+    width: 100%;
+  }
+  .grid-cell {
+    aspect-ratio: 1;
+    min-width: 0;
+    min-height: 0;
+    max-width: none;
+    max-height: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .grid-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    gap: 12px;
+    width: 100%;
+  }
+  .grid-cell {
+    aspect-ratio: 16/9;
+    min-width: 0;
+    min-height: 0;
+    max-width: none;
+    max-height: none;
+  }
 }
 </style>
