@@ -105,7 +105,7 @@ app.get('/api/games', (req: Request, res: Response) => {
       if (db) {
         try {
           const rows = await db`SELECT games FROM daily_grid WHERE date = ${today}`
-          if (rows.length > 0) {
+          if (rows.length > 0 && (rows[0].games as Game[]).length > 0) {
             cachedGrid = { date: today, games: rows[0].games as Game[] }
             return res.json({ games: cachedGrid.games, gridId: today })
           }
@@ -159,8 +159,8 @@ app.get('/api/games', (req: Request, res: Response) => {
       cachedGrid = { date: today, games: selectedGames }
 
       // Persist to DB (fire-and-forget — don't block the response)
-      if (db) {
-        db`INSERT INTO daily_grid (date, games) VALUES (${today}, ${JSON.stringify(selectedGames)}) ON CONFLICT (date) DO NOTHING`
+      if (db && selectedGames.length > 0) {
+        db`INSERT INTO daily_grid (date, games) VALUES (${today}, ${JSON.stringify(selectedGames)}) ON CONFLICT (date) DO UPDATE SET games = EXCLUDED.games`
           .catch(err => console.error('DB write error:', err))
       }
 
