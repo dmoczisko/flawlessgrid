@@ -144,6 +144,7 @@ app.get('/api/games', (req: Request, res: Response) => {
         },
       )
 
+      console.log('IGDB raw response count:', igdbRes.data?.length, 'status:', igdbRes.status)
       // Removes duplicate game names, keep first occurrence
       const allGames = igdbRes.data
       const uniqueGames: Game[] = []
