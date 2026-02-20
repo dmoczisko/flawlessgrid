@@ -10,8 +10,9 @@ dotenv.config()
 const db = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null
 
 if (db) {
-  db`CREATE TABLE IF NOT EXISTS daily_grid (date TEXT PRIMARY KEY, games JSONB NOT NULL)`
-    .catch(err => console.error('DB setup error:', err))
+  db`CREATE TABLE IF NOT EXISTS daily_grid (date TEXT PRIMARY KEY, games JSONB NOT NULL)`.catch(
+    (err) => console.error('DB setup error:', err),
+  )
 }
 
 const app = express()
@@ -132,8 +133,7 @@ app.get('/api/games', (req: Request, res: Response) => {
            & first_release_date < ${monthTimestamp} \
            & rating > 60 \
            & total_rating_count > 10 \
-           & summary != null \
-           & category = (0,8,9); \
+           & summary != null; \
          sort total_rating_count desc; \
          limit 500;`,
         {
@@ -144,7 +144,7 @@ app.get('/api/games', (req: Request, res: Response) => {
         },
       )
 
-      console.log('IGDB raw response count:', igdbRes.data?.length, 'status:', igdbRes.status)
+      console.log('IGDB response count:', igdbRes.data?.length)
       // Removes duplicate game names, keep first occurrence
       const allGames = igdbRes.data
       const uniqueGames: Game[] = []
@@ -161,8 +161,9 @@ app.get('/api/games', (req: Request, res: Response) => {
 
       // Persist to DB (fire-and-forget — don't block the response)
       if (db && selectedGames.length > 0) {
-        db`INSERT INTO daily_grid (date, games) VALUES (${today}, ${JSON.stringify(selectedGames)}) ON CONFLICT (date) DO UPDATE SET games = EXCLUDED.games`
-          .catch(err => console.error('DB write error:', err))
+        db`INSERT INTO daily_grid (date, games) VALUES (${today}, ${JSON.stringify(selectedGames)}) ON CONFLICT (date) DO UPDATE SET games = EXCLUDED.games`.catch(
+          (err) => console.error('DB write error:', err),
+        )
       }
 
       res.json({ games: selectedGames, gridId: today })
@@ -190,14 +191,15 @@ app.get('/api/search', (req: Request, res: Response) => {
       if (sanitizedQuery.length < 2) {
         return res.status(400).json({ error: 'Query must be at least 2 characters' })
       }
-      const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ?? req.ip ?? 'unknown'
+      const ip =
+        (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ?? req.ip ?? 'unknown'
       if (isRateLimited(ip)) {
         return res.status(429).json({ error: 'Too many requests, please slow down.' })
       }
       const token = await getAccessToken()
       const igdbRes = await axios.post(
         'https://api.igdb.com/v4/games',
-        `search "${sanitizedQuery}"; fields name, id, first_release_date, cover.url; limit 20;`,
+        `search "${sanitizedQuery}"; fields name, id, first_release_date, cover.url, version_parent; limit 30;`,
         {
           headers: {
             'Client-ID': process.env.TWITCH_CLIENT_ID as string,
@@ -205,7 +207,21 @@ app.get('/api/search', (req: Request, res: Response) => {
           },
         },
       )
-      res.json(igdbRes.data)
+
+      // Collapse versions to their parent game, deduplicate by canonical ID
+      const seen = new Set<number>()
+      const results = igdbRes.data
+        .map((g: { id: number; version_parent?: { id: number; name: string } } & Record<string, unknown>) =>
+          g.version_parent ? { ...g.version_parent, cover: g.cover, first_release_date: g.first_release_date } : g
+        )
+        .filter((g: { id: number }) => {
+          if (seen.has(g.id)) return false
+          seen.add(g.id)
+          return true
+        })
+        .slice(0, 20)
+
+      res.json(results)
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         console.error('IGDB search error:', err.response?.data || err.message)
