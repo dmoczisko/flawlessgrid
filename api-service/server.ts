@@ -133,7 +133,7 @@ app.get('/api/games', (req: Request, res: Response) => {
            & rating > 60 \
            & total_rating_count > 10 \
            & summary != null \
-           & (category = 0 | category = 8 | category = 9); \
+           & category = (0,8,9); \
          sort total_rating_count desc; \
          limit 500;`,
         {
